@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="TW">
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=1.0, maximum-scale=3.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<meta charset="UTF-8">
+	<title>主頁</title>
+</head>
+<body class="bg-gradient-to-tr from-cyan-100 via-sky-50 to-blue-200">
+
+	<div class="flex flex-col container mx-auto h-screen px-10 py-10 space-y-5">
+<!-- 合約、批號選擇 -------------------------------------------------------------------->
+		<div class="flex h-1/9 justify-center space-x-10">
+			<div class="relative h-14 w-1/3">
+					<select class="slt">
+						<option value="11200001">合約 11200001</option>
+						<option value="11200002">合約 11200002</option>
+						<option value="11200003">合約 11200003</option>
+						<option value="11200004">合約 11200004</option>
+					</select>
+					<label class="lbl"> 合約 </label>
+				</div>
+				
+			<div class="relative h-14 w-1/3">
+				<select class="slt">
+					<option value="11200001">批號 11200001</option>
+					<option value="11200002">批號 11200002</option>
+					<option value="11200003">批號 11200003</option>
+					<option value="11200004">批號 11200004</option>
+				</select>
+					<label class="lbl"> 批號 </label>
+			</div>
+				
+			<div class="h-12 w-1/3 flex items-center font-semibold text-2xl text-blue-700">
+				<span>客戶姓名：</span>
+				<span class="text-blue-950">王淼尛</span>
+			</div>
+		</div>
+<!-- 入雛日、量顯示 -------------------------------------------------------------------->
+		<div class="flex h-1/9 justify-center space-x-10 border-b-4 border-orange-500">
+			<div class="h-12 w-1/3 px-4 flex items-center font-semibold text-2xl text-blue-700">
+				<span>入雛日期：</span>
+				<span class="text-blue-950">2023/04/01</span>
+			</div>
+				
+			<div class="h-12 w-1/3 px-4 flex items-center font-semibold text-2xl text-blue-700">
+				<span>入雛數量：</span>
+				<span class="text-blue-950">20,000</span>
+			</div>
+				
+			<div class="h-12 w-1/3 flex items-center font-semibold text-2xl text-blue-700">
+				<span>目前平均雞隻重量：</span>
+				<span class="text-blue-950">XXX g</span>
+			</div>
+		</div>
+<!-- 生長資訊、曲線圖 -------------------------------------------------------------------->
+		<div class="flex h-full justify-between space-x-10">
+		
+			<div class="h-full w-1/2 px-4 space-y-10 font-semibold text-2xl text-blue-700">
+				<div class="text-2xl"> 
+				每日均重分布 
+				<span class="text-blue-950">____________</span>
+				</div>
+				<div class="text-2xl">
+				配方資料(用料、用藥)
+					<p class="text-blue-950">第一期</p>
+					<p class="text-blue-950">第二期</p>
+					<p class="text-blue-950">第三期</p>				
+				</div>
+				<div class="text-2xl">
+				動態推估
+				</div>
+				<div class="text-2xl">
+				飼養歷史比對
+				</div>
+			</div>
+				
+			<div class="h-full w-1/2 flex flex-col justify-center items-center space-y-5 font-semibold text-2xl text-blue-700 border-l-4 border-orange-500">
+				<h1 class="text-2xl">生長曲線</h1>
+				<img class="mx-auto" src="toCompany_20230519/img/img-003.jpg" >
+			</div>
+		</div>			
+	</div>
+<!-- 生長資訊、曲線圖 END -------------------------------------------------------------------->	
+	<script src="js/jquery-3.5.1.min.js"></script>
+	<script src="js/tailwindcss.js"></script>
+	<script>
+		var select_style=
+		"peer h-full w-full rounded-[7px] border border-blue-gray-200 border-t-transparent px-3 py-2.5 font-semibold text-xl text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border placeholder-shown:border-blue-gray-200 placeholder-shown:border-t-blue-gray-200 empty:!bg-red-500 focus:border-2 focus:border-pink-500 focus:border-t-transparent focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50";
+		$( ".slt" ).addClass( select_style );
+		var label_style=
+		"before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 flex h-full w-full select-none text-[15px] font-semibold leading-tight text-blue-gray-400 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-blue-gray-200 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-blue-gray-200 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-blue-gray-500 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[15px] peer-focus:leading-tight peer-focus:text-pink-500 peer-focus:before:border-t-2 peer-focus:before:border-l-2 peer-focus:before:border-pink-500 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:border-pink-500 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-blue-gray-500";
+		$( ".lbl" ).addClass( label_style );		
+	</script>	
+</body>
+</html>

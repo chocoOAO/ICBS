@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<xml>
+	<SAP_APRV_RLT>
+		<RTaskID>274605</RTaskID>
+		<m_FRGZU>Approved</m_FRGZU>
+		<m_PROCESS_DATE>20230822</m_PROCESS_DATE>
+		<m_PROCESS_TIME>21:49:55</m_PROCESS_TIME>
+		<m_RETURN_CODE>OK</m_RETURN_CODE>
+		<m_RETURN_MESSAGE></m_RETURN_MESSAGE>
+	</SAP_APRV_RLT>
+</xml>

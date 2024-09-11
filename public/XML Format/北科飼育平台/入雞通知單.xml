@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xml>
+  <SAL15_M>
+    <RTaskID></RTaskID>
+    <ApplyAccount></ApplyAccount>
+    <ApplyHRID></ApplyHRID>
+    <ApplyName></ApplyName>
+    <ApplyOUCode></ApplyOUCode>
+    <ApplySAPCompanyCode></ApplySAPCompanyCode>
+    <SN1></SN1>
+    <SN2></SN2>
+    <RearingMethod></RearingMethod>
+    <CustomerID></CustomerID>
+    <CustomerName></CustomerName>
+    <TotalIncomeCount></TotalIncomeCount>
+    <Ctype></Ctype>
+  </SAL15_M>
+  <SAL15_D>
+    <TaskID></TaskID>
+    <IncomeDate></IncomeDate>
+    <IncomeCount></IncomeCount>
+    <IncomeSource></IncomeSource>
+  </SAL15_D>
+</xml>

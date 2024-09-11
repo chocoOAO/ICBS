@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xml>
+ <SD_DL_HD>
+   <m_MBLNR>4900000001</m_MBLNR>
+   <m_MJAHR>2023</m_MJAHR>
+   <m_DLVBELN>3200000001</m_DLVBELN>
+   <m_WADAT_IST>20230830</m_WADAT_IST>
+   <m_FWUSOWCHARG>W000000001</m_FWUSOWCHARG>
+   <m_KUNAG>BN31010000</m_KUNAG>
+   <m_CREATE_DATE>20230830></m_CREATE_DATE>
+   <m_CREATE_TIME>180641</m_CREATE_TIME>
+   <SD_DL_IT>
+     <m_TYPE>A</m_TYPE>
+     <m_MAKTX>仿土雞1期碎粒 P</m_MAKTX>
+     <m_LFIMG>1000</m_LFIMG>
+     <m_ANTIBIOTIC>Y</m_ANTIBIOTIC>
+   </SD_DL_IT>
+   <SD_DL_IT>
+     <m_TYPE>C</m_TYPE>
+     <m_MAKTX>硫酸亞鐵A</m_MAKTX>
+     <m_LFIMG>39.5</m_LFIMG>
+     <m_ANTIBIOTIC>Y</m_ANTIBIOTIC>
+   </SD_DL_IT>
+   <SD_DL_IT>
+     <m_TYPE/>
+     <m_MAKTX>硫酸亞鐵B</m_MAKTX>
+     <m_LFIMG>40.05</m_LFIMG>
+     <m_ANTIBIOTIC>N</m_ANTIBIOTIC>
+   </SD_DL_IT>
+ </SD_DL_HD>
+</xml>

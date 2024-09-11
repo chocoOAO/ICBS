@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xml>
+  <SAL15_M>
+    <RTaskID>274605</RTaskID>
+    <ApplyAccount>ming</ApplyAccount>
+    <ApplyHRID>990108</ApplyHRID>
+    <ApplyName>林宗旻</ApplyName>
+    <ApplyOUCode>FS20</ApplyOUCode>
+    <ApplySAPCompanyCode>T110</ApplySAPCompanyCode>
+    <SN1>1120012</SN1>
+    <SN2>G11208104</SN2>
+    <RearingMethod>代養</RearingMethod>
+    <CustomerID>AE01600023</CustomerID>
+    <CustomerName>曾丞詔-代</CustomerName>
+    <TotalIncomeCount>48000</TotalIncomeCount>
+    <Ctype>ROSS</Ctype>
+  </SAL15_M>
+  <SAL15_D>
+    <TaskID>274605</TaskID>
+    <IncomeDate>2023/8/29 上午 12:00:00</IncomeDate>
+    <IncomeCount>48000</IncomeCount>
+    <IncomeSource>富祥</IncomeSource>
+  </SAL15_D>
+</xml>

@@ -1,0 +1,44 @@
+contracts 合約
+id
+
+ChickenImports 入雛表
+id
+contracts_id
+quantity 入雛數量
+gift_quantity 贈送數量
+amount 總數
+price 單價(元/羽)
+//total_price 總價
+package_quantity 包裝(隻)
+package 包裝(箱)
+avg_weight 平均雛雞重
+total_weight 總重
+picture_url 收執聯照片
+date 日期
+//memo 備註欄
+
+Customers
+id
+name
+phone
+address
+
+ChickenVerify 驗收表
+id
+chicken_imports_id
+//驗收項目
+//customer_id 客戶姓名
+date 驗收日期
+quantity 驗收收量
+//贈送數量	?
+death_quantity 死亡數量(死亡)
+price 單價(元/羽)
+fee 手續費
+amount 總羽數
+money1 代扣除雞款	公司款
+money2	        客戶款
+//總金額
+//memo 備註欄
+
+
+

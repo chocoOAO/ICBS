@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xml>
+  <sal15_m>
+    <RTaskID>511486</RTaskID>
+    <ApplyAccount>ming</ApplyAccount>
+    <ApplyHRID>990108</ApplyHRID>
+    <ApplyName>林宗旻</ApplyName>
+    <ApplyOUCode>FS40</ApplyOUCode>
+    <ApplySAPCompanyCode>T110</ApplySAPCompanyCode>
+    <SN1>1120122</SN1>
+    <SN2>G11211109</SN2>
+    <RearingMethod>代養</RearingMethod>
+    <CustomerID>AE01600001</CustomerID>
+    <CustomerName>莊文郝興聖-代</CustomerName>
+    <TotalIncomeCount>20000</TotalIncomeCount>
+    <Ctype>ROSS</Ctype>
+  </sal15_m>
+  <sal15_d>
+    <TaskID>511486</TaskID>
+    <IncomeDate>2023/11/16 上午 12:00:00</IncomeDate>
+    <IncomeCount>15000</IncomeCount>
+    <IncomeSource>00</IncomeSource>
+    <Coop>北側-001</Coop>
+  </sal15_d>
+  <sal15_d>
+    <TaskID>511486</TaskID>
+    <IncomeDate>2023/11/27 上午 12:00:00</IncomeDate>
+    <IncomeCount>5000</IncomeCount>
+    <IncomeSource>02</IncomeSource>
+    <Coop>北側-002</Coop>
+  </sal15_d>
+</xml>

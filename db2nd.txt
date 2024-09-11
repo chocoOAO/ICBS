@@ -1,0 +1,24 @@
+contracts 合約
+id
+
+ChickenImports 入雛表
+id
+contracts_id
+batch_id 批號
+
+
+ImportDetails 入雛表細節
+id
+contracts_id
+quantity 入雛數量
+gift_quantity 贈送數量
+amount 總數
+price 單價(元/羽)
+//total_price 總價
+package_quantity 包裝(隻)
+package 包裝(箱)
+avg_weight 平均雛雞重
+total_weight 總重
+picture_url 收執聯照片
+date 日期
+//memo 備註欄
