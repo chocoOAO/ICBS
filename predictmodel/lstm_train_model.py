@@ -54,7 +54,7 @@ df['Weight'].fillna(method='ffill', inplace=True)
 # 將數據縮放到 (0,1) 範圍
 scaler = MinMaxScaler(feature_range=(0, 1))
 data_scaled = scaler.fit_transform(df[['Weight']])
-
+print(data_scaled)
 # LSTM 模型需要 3D 輸入數據
 X_train = []
 y_train = []
@@ -78,7 +78,7 @@ model.add(Dense(1))
 model.compile(optimizer='adam', loss='mean_squared_error')
 
 # 訓練模型
-model.fit(X_train, y_train, epochs=100, batch_size=1, verbose=2)
+model.fit(X_train, y_train, epochs=10, batch_size=1, verbose=2)
 model.save("my_model.h5")
 
 # 使用最後的5筆數據進行預測
