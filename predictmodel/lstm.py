@@ -79,7 +79,7 @@ model.compile(optimizer='adam', loss='mean_squared_error')
 
 # 訓練模型
 model.fit(X_train, y_train, epochs=100, batch_size=1, verbose=2)
-model.save("my_model.h5")
+model.save("200_model.h5")
 
 # 使用最後的5筆數據進行預測
 initial_data = df['Weight'].values[-5:]
