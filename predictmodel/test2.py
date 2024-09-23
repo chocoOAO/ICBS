@@ -10,7 +10,7 @@ from tensorflow.keras.optimizers import Adam
 # 標準參考數據
 standard_data = [43, 61, 79, 99, 122, 148, 176, 208, 242, 280, 321, 366, 414, 465, 519, 576, 637, 701, 768, 837,
                  910, 985, 1062, 1142, 1225, 1309, 1395, 1483, 1573, 1664, 1757, 1851, 1946, 2041, 2138, 2235]
-
+standard_data_df = pd.DataFrame({'Weight': standard_data})
 # MySQL 連接參數
 config = {
     'host': '127.0.0.1',
@@ -57,20 +57,40 @@ finally:
         print("MySQL 連接已關閉")
 
 # 創建 DataFrame
-print(len(data))
-subset_data = data[:20]
-for data_per_batch_number in subset_data:
+subset_data = data[:]
+n_step=5
+n_feature=1
+for data_per_batch_number in subset_data:   
     df = pd.DataFrame(data_per_batch_number, columns=['Date', 'Weight'])
     
     # 替換0值並使用standard_data填補
     df['Weight'] = df['Weight'].replace(0, np.nan)
     df['Weight'] = df['Weight'].combine_first(pd.Series(standard_data))
-    
-    print("最前面五筆重量資料:")
-    print(df.head())
+    current_length = len(df['Weight'])
 
-    # 將數據縮放到 (0, 2) 範圍
-    scaler = MinMaxScaler(feature_range=(0, 2))
+    # 如果长度小于 33
+    if current_length < 33:
+    # 計算需要補充的數量
+        needed_length = 33 - current_length
+        
+        # 從 standard_data_df 補充數據
+        df_additional = standard_data_df.iloc[current_length:current_length+needed_length].reset_index(drop=True)
+        
+        # 更新 Weight 和 Date
+        df = pd.concat([df, df_additional], ignore_index=True)
+        
+        # 更新日期
+        last_date = df['Date'].iloc[-(current_length + 1)]  # 最後一個現有日期
+        new_dates = [last_date + pd.Timedelta(days=i) for i in range(1, needed_length + 1)]
+        
+        # 使用 .loc 來賦值，避免警告
+        df.loc[current_length:, 'Date'] = new_dates
+        # 输出结果
+    
+
+    # 將數據縮放到 (0, 1) 範圍
+    
+    scaler = MinMaxScaler(feature_range=(0, 1))
     data_scaled = scaler.fit_transform(df[['Weight']])
     
     # LSTM 模型需要 3D 輸入數據
@@ -91,19 +111,12 @@ for data_per_batch_number in subset_data:
     model = Sequential()
 
     # 調整 LSTM 層單元數及 Dropout
-    model.add(LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], 1)))
-    model.add(Dropout(0.6))
-    model.add(LSTM(units=50, return_sequences=True))
-    model.add(Dropout(0.6))
-    model.add(LSTM(units=50, return_sequences=True))
-    model.add(Dropout(0.6))
-    model.add(LSTM(units=50))
-    model.add(Dropout(0.6))
+    model.add(LSTM(units=50, activation='relu',return_sequences=False, input_shape=(n_step, n_feature)))
+    #model.add(Dropout(0.6))
     model.add(Dense(units=1))
 
     # 調整 Adam 優化器的學習率
-    optimizer = Adam(learning_rate=0.0005)
-    model.compile(optimizer=optimizer, loss='mean_absolute_error')
+    model.compile(optimizer='adam', loss='mse', metrics=['mse', 'mape'])
 
     # 加载之前保存的模型权重
     try:
@@ -113,7 +126,7 @@ for data_per_batch_number in subset_data:
         print("未找到保存的权重文件，开始从头训练模型。")
 
     # 進行模型訓練
-    model.fit(X_train, y_train, epochs=150, batch_size=32)
+    model.fit(X_train, y_train, epochs=100, batch_size=20)
 
     # 保存模型
     model.save("new_model_4.h5")
@@ -130,3 +143,5 @@ for data_per_batch_number in subset_data:
     plt.ylabel('Weight')
     plt.legend()
     # plt.show()
+    
+    
