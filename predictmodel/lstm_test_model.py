@@ -7,7 +7,7 @@ from keras.layers import LSTM, Dense
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
-
+import random
 standard_data = [43,61,79,99,122,148,176,208,242,280,321,366,414,465,519,576,637,701,768,837,910,985,1062,1142,1225,1309,1395,1483,1573,1664,1757,1851,1946,2041,2138,2235]
 # MySQL 連接參數
 config = {
@@ -45,8 +45,6 @@ try:
                 data_per_batch_number = []
                 for result in results:
                     data_per_batch_number.append(result)
-                    if len(data_per_batch_number) > 21:
-                        break
                 data.append(data_per_batch_number)
         print(data[0])
             # 获取查询结果
@@ -60,11 +58,14 @@ finally:
         connection.close()
         print("MySQL 連接已關閉")
 
-
+count = 0
 # 創建 DataFrame
-subset_data = data[:3]
+random.shuffle(data)
+subset_data = [entry[:21] for entry in data[:3]]
 for data_per_batch_number in subset_data:
+    
     df = pd.DataFrame(data_per_batch_number, columns=['Date', 'Weight'])
+    origin_df = pd.DataFrame(data[count], columns=['Date', 'Weight'])
     # 替換0值：將0值替換為standard_data中對應位置的資料
     df['Weight'] = df['Weight'].replace(0, np.nan)  # 將0值轉換為NaN
     df['Weight'] = df['Weight'].combine_first(pd.Series(standard_data))  # 用standard_data對應位置的值填充NaN
@@ -108,7 +109,7 @@ for data_per_batch_number in subset_data:
 
     # 繪製實際數據和預測結果
     plt.figure(figsize=(12, 6))
-    plt.plot(df['Date'], df['Weight'], label='實際重量', color='blue')
+    plt.plot(origin_df['Date'], origin_df['Weight'], label='實際重量', color='blue')
     plt.plot(predicted_dates, predicted_weights, label='預測重量', color='red', linestyle='--')
     plt.xlabel('日期')
     plt.ylabel('重量')
@@ -118,3 +119,4 @@ for data_per_batch_number in subset_data:
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
+    count+=1
