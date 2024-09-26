@@ -14,7 +14,7 @@ config = {
     'host': '127.0.0.1',
     'port': 3306,
     'user': 'root',
-    'password': '@Abaaa95166',
+    'password': '1478529',
     'database': 'fms'
 }
 
