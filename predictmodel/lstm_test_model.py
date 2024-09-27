@@ -30,7 +30,8 @@ try:
         cursor = connection.cursor()
 
         # Step 1: 獲取所有的 batchNumber
-        batch_number_list_query = "SELECT DISTINCT batchNumber FROM raw_weights WHERE time='06:00:00';"
+        #batch_number_list_query = "SELECT DISTINCT batchNumber FROM raw_weights"
+        batch_number_list_query = "SELECT DISTINCT chicken_import_id FROM feeding_logs;"
         cursor.execute(batch_number_list_query)
         batch_numbers = cursor.fetchall()
         batch_number_list = [batch[0] for batch in batch_numbers]
@@ -102,6 +103,7 @@ for data_per_batch_number in subset_data:
     df['Feed_Type'] = df['Feed_Type'].fillna('No_Feed')  # 將NaN值轉換為'No_Feed'
     df['Weight'] = df['Weight'].combine_first(pd.Series(standard_data))  # 用standard_data對應位置的值填充NaN
     # 假設 df 是你的 DataFrame
+    '''
     zero_feed_weight_count = (df['Feed_Weight'] != 0).sum()
 
     if zero_feed_weight_count == 0:
@@ -115,6 +117,7 @@ for data_per_batch_number in subset_data:
         for i in range(0, length, 3):
             df.loc[i, 'Feed_Weight'] = replacement_value  # 使用 .loc 替代 .iloc
             df.loc[i, 'Feed_Type'] = 'Ｎ肉雞３號(添)  P'  # 使用 .loc 替代 .iloc
+    '''
     # 明確指定要進行編碼的類別
     categories = [['No_Feed']+feed_item_list]  # 所有可能的類別
     # 初始化編碼器，並設置 `handle_unknown='ignore'`

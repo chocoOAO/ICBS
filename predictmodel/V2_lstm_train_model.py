@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.optimizers import Adam
 import re
 from sklearn.preprocessing import OneHotEncoder
+from tensorflow.keras.callbacks import EarlyStopping
 
 # 標準參考數據
 standard_data = [43, 61, 79, 99, 122, 148, 176, 208, 242, 280, 321, 366, 414, 465, 519, 576, 637, 701, 768, 837,
@@ -31,11 +32,12 @@ try:
         cursor = connection.cursor()
 
         # Step 1: 獲取所有的 batchNumber
-        batch_number_list_query = "SELECT DISTINCT batchNumber FROM raw_weights WHERE time='06:00:00';"
+        #batch_number_list_query = "SELECT DISTINCT batchNumber FROM raw_weights"
+        batch_number_list_query = "SELECT DISTINCT chicken_import_id FROM feeding_logs;"
         cursor.execute(batch_number_list_query)
         batch_numbers = cursor.fetchall()
         batch_number_list = [batch[0] for batch in batch_numbers]
-
+        print(len(batch_number_list))
         for batch in batch_number_list:
             query = f"SELECT sid FROM sensorlist WHERE batchNumber = '{batch}';"
             cursor.execute(query)
@@ -102,7 +104,7 @@ for per_subset_feed_data in subset_feed_data:
     df['Feed_Type'] = df['Feed_Type'].fillna('No_Feed')  # 將NaN值轉換為0
     df['Weight'] = df['Weight'].combine_first(pd.Series(standard_data))  # 用standard_data對應位置的值填充NaN
     current_length = len(df['Weight'])
-
+    '''
     # 假設 df 是你的 DataFrame
     zero_feed_weight_count = (df['Feed_Weight'] != 0).sum()
 
@@ -117,6 +119,7 @@ for per_subset_feed_data in subset_feed_data:
         for i in range(0, length, 3):
             df.loc[i, 'Feed_Weight'] = replacement_value  # 使用 .loc 替代 .iloc
             df.loc[i, 'Feed_Type'] = 'Ｎ肉雞３號(添)  P'  # 使用 .loc 替代 .iloc
+    '''
     # 如果长度小于 33
     if current_length < 33:
     # 計算需要補充的數量
@@ -189,7 +192,9 @@ for per_subset_feed_data in subset_feed_data:
         print("未找到保存的权重文件，开始从头训练模型。")
 
     # 進行模型訓練
-    model.fit(X_train, y_train, epochs=200, batch_size=64)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10)
+
+    model.fit(X_train, y_train, epochs=100, batch_size=20, validation_split=0.2, callbacks=[early_stopping])
 
     # 保存模型
     model.save("new_model.h5")
