@@ -9,6 +9,10 @@ from tensorflow.keras.optimizers import Adam
 import re
 from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.models import load_model
+from sklearn.metrics import mean_squared_error,mean_absolute_error
+import random
+
 
 # 標準參考數據
 standard_data = [43, 61, 79, 99, 122, 148, 176, 208, 242, 280, 321, 366, 414, 465, 519, 576, 637, 701, 768, 837,
@@ -79,6 +83,7 @@ try:
                 for result in cursor:
                     feed_data_per_batch_number.append(result)
                 feed_data.append(feed_data_per_batch_number)
+                
         query = f"select distinct feed_item from feeding_logs;"
         cursor.execute(query)
         feed_item_lists= cursor.fetchall()
@@ -94,7 +99,29 @@ finally:
 
 # 創建 DataFrame
 subset_feed_data = feed_data[:]
-for per_subset_feed_data in subset_feed_data:
+print(len(subset_feed_data))
+# random.shuffle(subset_feed_data)
+initial_train_size = int(len(subset_feed_data) * 1)  # 初始訓練集大小
+validation_size = int(len(subset_feed_data) * 0.1)     # 驗證集大小
+correlation_results = {}  # 存储每个批次的相关系数
+
+for i, per_subset_feed_data in enumerate(subset_feed_data):
+    if not per_subset_feed_data:
+        continue
+    
+    # 创建 DataFrame
+    df = pd.DataFrame(per_subset_feed_data, columns=['Date', 'Weight', 'Feed_Type', 'Feed_Weight'])
+    
+    correlation = df['Weight'].corr(df['Feed_Weight'])
+    
+    # 存储结果，使用批次索引作为键
+    correlation_results[f'Batch_{i}'] = correlation
+
+# 输出相关系数结果
+for batch, corr in correlation_results.items():
+    print(f"{batch} Correlation between Feed_Weight and Weight: {corr}")
+
+for per_subset_feed_data in subset_feed_data[:initial_train_size]:
     if not per_subset_feed_data:
         continue
     df = pd.DataFrame(per_subset_feed_data, columns=['Date','Weight','Feed_Type', 'Feed_Weight'])
@@ -156,7 +183,8 @@ for per_subset_feed_data in subset_feed_data:
 
     # 合併編碼後的特徵到原始數據集
     df_encoded = pd.concat([df.drop(columns=['Feed_Type']), encoded_df], axis=1)
-    
+
+
     scaler = MinMaxScaler(feature_range=(0, 1))
     data_scaled = scaler.fit_transform(df_encoded[['Weight', 'Feed_Weight', 'Feed_Type_No_Feed'] + [col for col in df_encoded.columns if 'Feed_Type_Ｎ肉雞' in col]])
 
@@ -198,3 +226,118 @@ for per_subset_feed_data in subset_feed_data:
 
     # 保存模型
     model.save("new_model.h5")
+
+count = 0
+for data_per_batch_number in subset_feed_data[initial_train_size-5:]:
+    print(data_per_batch_number[:21])
+    origin_df = pd.DataFrame(feed_data[count+initial_train_size], columns=['Date', 'Weight', 'Feed_Type', 'Feed_Weight'])
+    df = pd.DataFrame(data_per_batch_number[:21], columns=['Date', 'Weight', 'Feed_Type', 'Feed_Weight'])
+
+    df['Weight'] = df['Weight'].replace(0, np.nan)  # 將0值轉換為NaN
+    df['Feed_Weight'] = df['Feed_Weight'].fillna(0)  # 將NaN值轉換為0
+    df['Feed_Type'] = df['Feed_Type'].fillna('No_Feed')  # 將NaN值轉換為'No_Feed'
+    df['Weight'] = df['Weight'].combine_first(pd.Series(standard_data))  # 用standard_data對應位置的值填充NaN
+    # 假設 df 是你的 DataFrame
+    '''
+    zero_feed_weight_count = (df['Feed_Weight'] != 0).sum()
+
+    if zero_feed_weight_count == 0:
+        # 取得 Feed_Weight 列的長度
+        length = len(df['Feed_Weight'])
+        
+        # 用來替換的值
+        replacement_value = 5566.1662
+        
+        # 每三個替換一次
+        for i in range(0, length, 3):
+            df.loc[i, 'Feed_Weight'] = replacement_value  # 使用 .loc 替代 .iloc
+            df.loc[i, 'Feed_Type'] = 'Ｎ肉雞３號(添)  P'  # 使用 .loc 替代 .iloc
+    '''
+    # 明確指定要進行編碼的類別
+    categories = [['No_Feed']+feed_item_list]  # 所有可能的類別
+    # 初始化編碼器，並設置 `handle_unknown='ignore'`
+    encoder = OneHotEncoder(categories=categories, handle_unknown='ignore', sparse=False)
+
+    # 進行編碼
+    encoded_features = encoder.fit_transform(df[['Feed_Type']])
+
+    # 將編碼後的特徵轉換為 DataFrame
+    encoded_df = pd.DataFrame(encoded_features, columns=encoder.get_feature_names_out(['Feed_Type']))
+
+    # 合併編碼後的特徵到原始數據集
+    df_encoded = pd.concat([df.drop(columns=['Feed_Type']), encoded_df], axis=1)
+
+    # 初始化 scaler
+    scaler = MinMaxScaler()
+
+    # 確保只選擇數值列進行縮放
+    numeric_columns = ['Weight', 'Feed_Weight'] + [col for col in df_encoded.columns if 'Feed_Type' in col]
+    data_scaled = scaler.fit_transform(df_encoded[numeric_columns])
+
+    features = ['Weight', 'Feed_Weight'] + [col for col in df_encoded.columns if 'Feed_Type' in col]
+
+    # 載入模型
+    model = load_model("new_model.h5")
+
+    # 使用最後 5 筆數據的所有特徵
+    initial_data = df_encoded[features].values[-5:]  # 確保提取所有特徵
+    initial_data_scaled = scaler.transform(initial_data)  # 直接轉換，而不是重塑
+    current_input = initial_data_scaled.reshape(1, 5, len(numeric_columns))  # 使用最後五筆數據作為初始輸入
+    predicted_weights = [df_encoded['Weight'].iloc[-1]]
+    predicted_dates = [df_encoded['Date'].iloc[-1]]
+    predicted_date = 35 - len(df_encoded['Date'])
+    count_day = 0
+    # 滑動窗口預測未來的重量，直到達到2100或30天
+    for day in range(predicted_date):  # 預測30天
+        predicted_weight_scaled = model.predict(current_input)
+        # 將預測值重塑為(1, 1)的形狀
+        predicted_weight_scaled_reshaped = np.zeros((1, len(numeric_columns)))  # 確保形狀為(1, 7)
+
+        predicted_weight_scaled_reshaped[0, 0] = predicted_weight_scaled  # 將預測值放入第一個特徵
+        
+        # 使用正確的形狀進行逆變換
+        predicted_weight = scaler.inverse_transform(predicted_weight_scaled_reshaped)[0, 0]
+        predicted_weights.append(predicted_weight)
+
+        # 計算日期，從第6天開始
+        next_date = pd.to_datetime(df_encoded['Date'].iloc[-1]) + pd.Timedelta(days=day + 1)
+        predicted_dates.append(next_date.date())
+
+        # 打印預測結果
+        print(f"預測日期：{next_date.date()}, 預測重量：{predicted_weight:.2f}")
+
+        if predicted_weight > 2100:
+            print("預測重量超過 2100，停止預測。")
+            break
+
+
+        # 提取 current_input 中的其他特徵（第一組的其餘特徵）
+        new_data = current_input[:, :1, :]
+        new_data[:1,:1,:1]= predicted_weight_scaled
+        next_input = np.append(current_input[:, 1:, :], new_data, axis=1)
+        current_input = next_input
+        count_day+=1
+    
+    actual_weights = origin_df['Weight'].iloc[-len(predicted_weights):].values  # 取出最後幾個實際重量
+    print(actual_weights)
+    print(predicted_weights)
+    mae = mean_absolute_error(actual_weights, predicted_weights)
+    mse = mean_squared_error(actual_weights, predicted_weights)
+
+    rmse = np.sqrt(mse)
+
+    print(f"MAE: {mae:.2f}")
+    print(f"RMSE: {rmse:.2f}")
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(origin_df['Date'], origin_df['Weight'], label='實際重量', color='blue')
+    plt.plot(predicted_dates, predicted_weights, label='預測重量', color='red', linestyle='--')
+    plt.xlabel('日期')
+    plt.ylabel('重量')
+    plt.title('重量預測')
+    plt.legend()
+    plt.grid(True)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+    count += 1
