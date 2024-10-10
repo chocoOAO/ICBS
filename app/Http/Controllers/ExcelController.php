@@ -11,7 +11,6 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use App\Models\Test;
 use App\Models\ZCusKna1;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Cache;
 
 use App\Models\Settlement;
 use App\Models\SettlementAccountNumber;
@@ -118,28 +117,17 @@ class ExcelController extends Controller
     // 並且寫入資料庫，如果再將檔案移動至資料夾exist，沒有資料夾則建立一個
     public function db_store()
     {
-        // 定義快取鍵和過期時間（15 分鐘）
-        $cacheKey = 'db_store_data';
-        $cacheDuration = 15 * 60; // 15 分鐘，以秒為單位
-
-        // 檢查快取中是否有資料
-        if (Cache::has($cacheKey)) {
-            return Cache::get($cacheKey); // 從快取中獲取資料
-        }
-
-        // 如果快取中沒有資料，執行資料處理
         Test::truncate();
         // Settlement::truncate();
-
-        $excelPath = '/mnt/bpm_test/ToFSFMS/qiafu_folder/newCreate_folder';
+        // Settlement::truncate(); // 删除 settlements 表中的所有记录，移除表中的所有数据行，并将自增 ID 重置为零。 使用 truncate() 方法会导致所有现有数据永久丢失，无法恢复。
+        // Test區塊
+        //$excelPath = '/mnt/bpm_test/ToFSFMS/qiafu_folder/newCreate_folder';
+        $excelPath = storage_path('excels/bpm_test');
         $files = \File::files($excelPath);
-        $processedData = [];
-
         foreach ($files as $file) {
             $filePath = $file->getPathname();
             $filename = basename($filePath, '.xlsx');
             $existingRecord = Test::where('account_number', 'LIKE', $filename . '%')->first();
-
             if ($existingRecord) {
                 return "Record already exists!";
             }
@@ -152,24 +140,22 @@ class ExcelController extends Controller
 
             $isFirstRow = true;
             $fieldNames = ["number","source","traceability","weighing_date","chicken_imports_id","account_number","breeder", "livestock_farm_name","batch","car_number","description","kilogram_weight","catty_weight","total_of_birds", "average_weight","down_chicken", "death", "discard", "stinking_claw", "dermatitis", "stinking_chest", "residue", "price_of_newspaper","unit_price","notes"];
-
             foreach ($worksheet->getRowIterator() as $row) {
                 $rowData = [];
                 $counter++;
-
                 if ($counter <= 1 || ($counter == $totalRows && empty($row->getCellIterator()->seek("B")->current()->getValue()))) {
                     continue;
                 }
-
                 foreach ($row->getCellIterator() as $cell) {
                     $rowData[] = $cell->getValue();
                 }
 
                 if ($isFirstRow) {
+                    // $fieldNames = $rowData;
                     $isFirstRow = false;
                     continue;
                 }
-
+                
                 if (count($rowData) < 25) {
                     $rowData = array_pad($rowData, 25, null);
                 }
@@ -178,15 +164,14 @@ class ExcelController extends Controller
                 if (count(array_filter($data)) > 0) {
                     Test::create($data);
                     Settlement::create($data);
-                    $processedData[] = $data;
                 }
             }
         }
-
-        // 將結果存儲到快取中，並設置過期時間為15分鐘
-        Cache::put($cacheKey, $processedData, $cacheDuration);
-
-        return $processedData;
+        
+        
+        // $filePath = storage_path('excels/AP20231218001.xlsx');
+        // dd($filePath);
+        
     }
 
     // 載入客戶主檔資料

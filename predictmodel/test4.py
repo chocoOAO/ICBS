@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
 import random
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import mean_squared_error,mean_absolute_error
 
 # 標準數據
 standard_data = [43, 61, 79, 99, 122, 148, 176, 208, 242, 280, 321, 366, 414, 465, 519, 576, 637, 701, 768, 837, 910, 985, 1062, 1142, 1225, 1309, 1395, 1483, 1573, 1664, 1757, 1851, 1946, 2041, 2138, 2235]
@@ -30,7 +31,6 @@ try:
         cursor = connection.cursor()
 
         # Step 1: 獲取所有的 batchNumber
-        #batch_number_list_query = "SELECT DISTINCT batchNumber FROM raw_weights"
         batch_number_list_query = "SELECT DISTINCT chicken_import_id FROM feeding_logs;"
         cursor.execute(batch_number_list_query)
         batch_numbers = cursor.fetchall()
@@ -77,10 +77,12 @@ try:
                 for result in cursor:
                     feed_data_per_batch_number.append(result)
                 feed_data.append(feed_data_per_batch_number)
-        query = f"select distinct feed_item from feeding_logs;"
+
+        query = f"SELECT DISTINCT feed_item FROM feeding_logs;"
         cursor.execute(query)
-        feed_item_lists= cursor.fetchall()
+        feed_item_lists = cursor.fetchall()
         feed_item_list = [feed_item[0] for feed_item in feed_item_lists]
+
 except mysql.connector.Error as err:
     print(f"錯誤: {err}")
 
@@ -89,6 +91,7 @@ finally:
         cursor.close()
         connection.close()
         print("MySQL 連接已關閉")
+
 print(feed_item_list)
 count = 0
 # 隨機化數據
@@ -102,24 +105,9 @@ for data_per_batch_number in subset_data:
     df['Feed_Weight'] = df['Feed_Weight'].fillna(0)  # 將NaN值轉換為0
     df['Feed_Type'] = df['Feed_Type'].fillna('No_Feed')  # 將NaN值轉換為'No_Feed'
     df['Weight'] = df['Weight'].combine_first(pd.Series(standard_data))  # 用standard_data對應位置的值填充NaN
-    # 假設 df 是你的 DataFrame
-    '''
-    zero_feed_weight_count = (df['Feed_Weight'] != 0).sum()
 
-    if zero_feed_weight_count == 0:
-        # 取得 Feed_Weight 列的長度
-        length = len(df['Feed_Weight'])
-        
-        # 用來替換的值
-        replacement_value = 5566.1662
-        
-        # 每三個替換一次
-        for i in range(0, length, 3):
-            df.loc[i, 'Feed_Weight'] = replacement_value  # 使用 .loc 替代 .iloc
-            df.loc[i, 'Feed_Type'] = 'Ｎ肉雞３號(添)  P'  # 使用 .loc 替代 .iloc
-    '''
     # 明確指定要進行編碼的類別
-    categories = [['No_Feed']+feed_item_list]  # 所有可能的類別
+    categories = [['No_Feed'] + feed_item_list]  # 所有可能的類別
     # 初始化編碼器，並設置 `handle_unknown='ignore'`
     encoder = OneHotEncoder(categories=categories, handle_unknown='ignore', sparse=False)
 
@@ -152,10 +140,10 @@ for data_per_batch_number in subset_data:
     predicted_dates = [df_encoded['Date'].iloc[-1]]
     predicted_date = 35 - len(df_encoded['Date'])
     count_day = 0
+
     # 滑動窗口預測未來的重量，直到達到2100或30天
     for day in range(predicted_date):  # 預測30天
         predicted_weight_scaled = model.predict(current_input)
-        # 將預測值重塑為(1, 1)的形狀
         predicted_weight_scaled_reshaped = np.zeros((1, len(numeric_columns)))  # 確保形狀為(1, 7)
 
         predicted_weight_scaled_reshaped[0, 0] = predicted_weight_scaled  # 將預測值放入第一個特徵
@@ -175,14 +163,26 @@ for data_per_batch_number in subset_data:
             print("預測重量超過 2100，停止預測。")
             break
 
-
         # 提取 current_input 中的其他特徵（第一組的其餘特徵）
         new_data = current_input[:, :1, :]
-        new_data[:1,:1,:1]= predicted_weight_scaled
+        new_data[:1, :1, :1] = predicted_weight_scaled
         next_input = np.append(current_input[:, 1:, :], new_data, axis=1)
         current_input = next_input
-        count_day+=1
+        count_day += 1
 
+    # 計算 MSE 和 RMSE
+    actual_weights = origin_df['Weight'].iloc[-len(predicted_weights):].values  # 取出最後幾個實際重量
+    print(actual_weights)
+    print(predicted_weights)
+    mae = mean_absolute_error(actual_weights, predicted_weights)
+    mse = mean_squared_error(actual_weights, predicted_weights)
+
+    rmse = np.sqrt(mse)
+
+    print(f"MAE: {mae:.2f}")
+    print(f"RMSE: {rmse:.2f}")
+
+    # 繪製預測結果
     plt.figure(figsize=(12, 6))
     plt.plot(origin_df['Date'], origin_df['Weight'], label='實際重量', color='blue')
     plt.plot(predicted_dates, predicted_weights, label='預測重量', color='red', linestyle='--')
