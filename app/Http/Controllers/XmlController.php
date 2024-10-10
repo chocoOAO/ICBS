@@ -22,7 +22,7 @@ class XmlController extends Controller
     // 1.輸入欲存取之資料夾路徑
     // 2.取得資料夾內的所有XML檔案
     // 3.回傳所有XML檔案名稱
-    public function getFolderFiles($fileLocation = '/mnt/bpm_test/ToFSFMS/fushou_folder/newCreate_folder/')
+    public function getFolderFiles($fileLocation = '/mnt/bpm_test/ToFSFMS/')
     {
         // $fileLocation = '/mnt/bpm_test/ToFSFMS/';
         $xmlFiles = File::glob($fileLocation . '*.xml'); // 取得所有以 .xml 結尾的檔案
@@ -34,7 +34,7 @@ class XmlController extends Controller
     // 1.getFolderFiles() -> getFileNames
     // 2.將xml檔案內的資料轉換成陣列
     // 3.回傳陣列
-    public function readXMLFile($fileName, $fileLocation = '/mnt/bpm_test/ToFSFMS/fushou_folder/newCreate_folder/')
+    public function readXMLFile($fileName, $fileLocation = '/mnt/bpm_test/ToFSFMS/')
     {
         $xmlData = [];
         $xmlPath = $fileLocation . $fileName;
@@ -163,13 +163,13 @@ class XmlController extends Controller
 
                     $this->writeXMLFile($xmlData[0]->RTaskID, 'OK', '');
                     // 成功生成後將檔案移動至Complete資料夾
-                    File::move("/mnt/bpm_test/ToFSFMS/fushou_folder/newCreate_folder/" . $file, "/mnt/bpm_test/ToFSFMS/fushou_folder/complete_folder/" . $file);
+                    File::move("/mnt/bpm_test/ToFSFMS/" . $file, "/mnt/bpm_test/ToFSFMS/Complete/" . $file);
 		    }
 
 		else {
                     // 如果沒有對應的Contract的m_KUNAG
                     // 將檔案移動至error_folder資料夾
-                    File::move("/mnt/bpm_test/ToFSFMS/fushou_folder/newCreate_folder/" . $file, "/mnt/bpm_test/ToFSFMS/fushou_folder/error_folder/" . $file);
+                    File::move("/mnt/bpm_test/ToFSFMS/" . $file, "/mnt/bpm_test/ToFSFMS/Process/" . $file);
                     // 生成一個log.txt，如果沒有則建立一個，寫入序號-時間戳記-filename-錯誤訊息
                     $log = fopen("/mnt/bpm_test/ToFSFMS/log.txt", "a");
                     $time = now()->addHours(8)->toDateTimeString();
@@ -186,7 +186,7 @@ class XmlController extends Controller
             } catch (Exception $e) {
                 // 失敗後將檔案移動至Process資料夾
 
-                File::move("/mnt/bpm_test/ToFSFMS/fushou_folder/newCreate_folder/" . $file, "/mnt/bpm_test/ToFSFMS/fushou_folder/error_folder/" . $file);
+                File::move("/mnt/bpm_test/ToFSFMS/" . $file, "/mnt/bpm_test/ToFSFMS/Process/" . $file);
                 // 生成一個log.txt，如果沒有則建立一個，寫入序號-時間戳記-filename-錯誤訊息
                 $log = fopen("/mnt/bpm_test/ToFSFMS/log.txt", "a");
                 $time = now()->addHours(8)->toDateTimeString();
@@ -211,7 +211,7 @@ class XmlController extends Controller
         }
         $this->processFeedFile($feedFiles);
     }
-    public function processFeedFile($feedFiles, $fileLocation = '/mnt/bpm_test/ToFSFMS/fushou_folder/newCreate_folder/')
+    public function processFeedFile($feedFiles, $fileLocation = '/mnt/bpm_test/ToFSFMS/')
     {
         $logFilePath = $fileLocation . "feedlog.txt";
         if (empty($feedFiles)) { $this->writeToLog("未找到以 FEED 開頭的 XML 文件", $logFilePath); }
@@ -267,7 +267,7 @@ class XmlController extends Controller
                         $this->writeToLog("未找到符合 SN2: " . $sn2 . " 的入雛表批號", $logFilePath);
                         continue;
                     }
-                }
+                }//路徑
                 if($matchingChickenImports->sum('actual_quantity') != 0 or $matchingChickenImports->sum('actual_quantity') != NULL){
                     File::move($fileLocation . "newCreate_folder/" .$feedFile, $fileLocation . "complete_folder/" . basename($feedFile));
                 }

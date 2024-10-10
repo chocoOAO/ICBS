@@ -11,6 +11,7 @@ from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras.callbacks import EarlyStopping
 import random
 from tensorflow.keras.models import load_model
+from sklearn.metrics import mean_squared_error,mean_absolute_error
 
 # 標準參考數據
 standard_data = [43, 61, 79, 99, 122, 148, 176, 208, 242, 280, 321, 366, 414, 465, 519, 576, 637, 701, 768, 837,
@@ -108,7 +109,7 @@ finally:
 count = 0
 # 隨機化數據
 random.shuffle(feed_data)
-subset_data = [entry for entry in feed_data[:20]]  # 取出每個 batch 的前 21 筆數據
+subset_data = [entry for entry in feed_data[:3]]  # 取出每個 batch 的前 21 筆數據
 for data_per_batch_number in subset_data:
     origin_df = pd.DataFrame(feed_data[count], columns=['Date', 'Weight', 'Feed_Type', 'Feed_Weight'])
     df = pd.DataFrame(data_per_batch_number, columns=['Date', 'Weight', 'Feed_Type', 'Feed_Weight'])
@@ -216,16 +217,8 @@ for data_per_batch_number in subset_data:
         count_day+=1
 
     plt.figure(figsize=(12, 6))
-    # 繪製實際重量
     plt.plot(origin_df['Date'], origin_df['Weight'], label='實際重量', color='blue')
-    # 繪製預測重量
     plt.plot(predicted_dates, predicted_weights, label='預測重量', color='red', linestyle='--')
-
-    # 在每個預測點上顯示數字
-    for i in range(len(predicted_dates)):
-        plt.text(predicted_dates[i], predicted_weights[i], f'{predicted_weights[i]:.2f}', 
-                fontsize=9, ha='center', color='red')
-
     plt.xlabel('日期')
     plt.ylabel('重量')
     plt.title('重量預測')
@@ -235,3 +228,15 @@ for data_per_batch_number in subset_data:
     plt.tight_layout()
     plt.show()
     count += 1
+
+    actual_weights = origin_df['Weight'].iloc[-len(predicted_weights):].values  # 取出最後幾個實際重量
+    print(origin_df['Weight'].values)
+    # print(actual_weights)
+    print(predicted_weights)
+    mae = mean_absolute_error(actual_weights, predicted_weights)
+    mse = mean_squared_error(actual_weights, predicted_weights)
+
+    rmse = np.sqrt(mse)
+
+    print(f"MAE: {mae:.2f}")
+    print(f"RMSE: {rmse:.2f}")

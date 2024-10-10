@@ -3,25 +3,23 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
-from keras.layers import LSTM, Dense
+from keras.layers import LSTM, Dense, Dropout
 import matplotlib.pyplot as plt
-from tensorflow.keras.models import load_model
-import random
+from tensorflow.keras.optimizers import Adam
+import re
 from sklearn.preprocessing import OneHotEncoder
-
-# 標準數據
-standard_data = [43, 61, 79, 99, 122, 148, 176, 208, 242, 280, 321, 366, 414, 465, 519, 576, 637, 701, 768, 837, 910, 985, 1062, 1142, 1225, 1309, 1395, 1483, 1573, 1664, 1757, 1851, 1946, 2041, 2138, 2235]
-
+from tensorflow.keras.callbacks import EarlyStopping
+from imblearn.over_sampling import SMOTE
+# 標準參考數據
+standard_data = [43, 61, 79, 99, 122, 148, 176, 208, 242, 280, 321, 366, 414, 465, 519, 576, 637, 701, 768, 837,
+                 910, 985, 1062, 1142, 1225, 1309, 1395, 1483, 1573, 1664, 1757, 1851, 1946, 2041, 2138, 2235]
+standard_data_df = pd.DataFrame({'Weight': standard_data})
 # MySQL 連接參數
 config = {
     'host': '127.0.0.1',
     'port': 3306,
     'user': 'root',
-<<<<<<< HEAD
-    'password': '@Abaaa95166',
-=======
     'password': '1478529',
->>>>>>> 1010395af3d49011ade9ee7eaaf88125a2d7b2bd
     'database': 'fms'
 }
 
@@ -39,7 +37,7 @@ try:
         cursor.execute(batch_number_list_query)
         batch_numbers = cursor.fetchall()
         batch_number_list = [batch[0] for batch in batch_numbers]
-
+        print(len(batch_number_list))
         for batch in batch_number_list:
             query = f"SELECT sid FROM sensorlist WHERE batchNumber = '{batch}';"
             cursor.execute(query)
@@ -93,20 +91,22 @@ finally:
         cursor.close()
         connection.close()
         print("MySQL 連接已關閉")
-count = 0
-# 隨機化數據
-random.shuffle(feed_data)
-subset_data = [entry[:21] for entry in feed_data[:1]]  # 取出每個 batch 的前 21 筆數據
-for data_per_batch_number in subset_data:
-    origin_df = pd.DataFrame(feed_data[count], columns=['Date', 'Weight', 'Feed_Type', 'Feed_Weight'])
-    df = pd.DataFrame(data_per_batch_number, columns=['Date', 'Weight', 'Feed_Type', 'Feed_Weight'])
+
+# 創建 DataFrame
+subset_feed_data = feed_data[:]
+print(subset_feed_data)
+for per_subset_feed_data in subset_feed_data:
+    if not per_subset_feed_data:
+        continue
+    df = pd.DataFrame(per_subset_feed_data, columns=['Date','Weight','Feed_Type', 'Feed_Weight'])
 
     df['Weight'] = df['Weight'].replace(0, np.nan)  # 將0值轉換為NaN
     df['Feed_Weight'] = df['Feed_Weight'].fillna(0)  # 將NaN值轉換為0
-    df['Feed_Type'] = df['Feed_Type'].fillna('No_Feed')  # 將NaN值轉換為'No_Feed'
+    df['Feed_Type'] = df['Feed_Type'].fillna('No_Feed')  # 將NaN值轉換為0
     df['Weight'] = df['Weight'].combine_first(pd.Series(standard_data))  # 用standard_data對應位置的值填充NaN
-    # 假設 df 是你的 DataFrame
+    current_length = len(df['Weight'])
     '''
+    # 假設 df 是你的 DataFrame
     zero_feed_weight_count = (df['Feed_Weight'] != 0).sum()
 
     if zero_feed_weight_count == 0:
@@ -114,13 +114,36 @@ for data_per_batch_number in subset_data:
         length = len(df['Feed_Weight'])
         
         # 用來替換的值
-        replacement_value = 5566.1662
+        replacement_value = 5566
         
         # 每三個替換一次
         for i in range(0, length, 3):
             df.loc[i, 'Feed_Weight'] = replacement_value  # 使用 .loc 替代 .iloc
             df.loc[i, 'Feed_Type'] = 'Ｎ肉雞３號(添)  P'  # 使用 .loc 替代 .iloc
     '''
+    # 如果长度小于 33
+    if current_length < 33:
+    # 計算需要補充的數量
+        needed_length = 33 - current_length
+        
+        # 從 standard_data_df 補充數據
+        df_additional = standard_data_df.iloc[current_length:current_length+needed_length].reset_index(drop=True)
+        last_date = df['Date'].iloc[-1]  # 獲取最後一個日期
+
+        # 更新 Weight 和 Date
+        df = pd.concat([df, df_additional], ignore_index=True)
+        
+        # 更新日期
+        new_dates = [last_date + pd.Timedelta(days=i) for i in range(1, needed_length + 1)]
+        
+        # 使用 .loc 來賦值，避免警告
+        df.loc[current_length:, 'Date'] = new_dates
+         # 補充 Feed_Weight 為 0
+        df.loc[current_length:, 'Feed_Weight'] = 0
+        
+        # 補充 Feed_Type 為 'No_Feed'
+        df.loc[current_length:, 'Feed_Type'] = 'No_Feed'
+        # 输出结果
     # 明確指定要進行編碼的類別
     categories = [['No_Feed']+feed_item_list]  # 所有可能的類別
     # 初始化編碼器，並設置 `handle_unknown='ignore'`
@@ -134,68 +157,45 @@ for data_per_batch_number in subset_data:
 
     # 合併編碼後的特徵到原始數據集
     df_encoded = pd.concat([df.drop(columns=['Feed_Type']), encoded_df], axis=1)
+    
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    data_scaled = scaler.fit_transform(df_encoded[['Weight', 'Feed_Weight', 'Feed_Type_No_Feed'] + [col for col in df_encoded.columns if 'Feed_Type_Ｎ肉雞' in col]])
 
-    # 初始化 scaler
-    scaler = MinMaxScaler()
+    # LSTM 模型需要 3D 輸入數據
+    X_train = []
+    y_train = []
 
-    # 確保只選擇數值列進行縮放
-    numeric_columns = ['Weight', 'Feed_Weight'] + [col for col in df_encoded.columns if 'Feed_Type' in col]
-    data_scaled = scaler.fit_transform(df_encoded[numeric_columns])
+    # 使用過去5天數據預測未來1天
+    for i in range(5, len(data_scaled)):
+        X_train.append(data_scaled[i-5:i, :])  # 將過去5天的所有特徵添加到 X_train
+        y_train.append(data_scaled[i, 0])      # 目標是當前的 Weight
 
-    features = ['Weight', 'Feed_Weight'] + [col for col in df_encoded.columns if 'Feed_Type' in col]
+    X_train, y_train = np.array(X_train), np.array(y_train)
 
-    # 載入模型
-    model = load_model("new_model.h5")
+    # 調整輸入數據格式為 LSTM 所需的 3D 格式
+    X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], X_train.shape[2]))
+    n_step = X_train.shape[1]  # 這是時間步長
+    n_feature = X_train.shape[2]  # 這是特徵數
+    # 构建并优化 LSTM 模型
+    model = Sequential()
 
-    # 使用最後 5 筆數據的所有特徵
-    initial_data = df_encoded[features].values[-5:]  # 確保提取所有特徵
-    initial_data_scaled = scaler.transform(initial_data)  # 直接轉換，而不是重塑
-    current_input = initial_data_scaled.reshape(1, 5, len(numeric_columns))  # 使用最後五筆數據作為初始輸入
-    predicted_weights = [df_encoded['Weight'].iloc[-1]]
-    predicted_dates = [df_encoded['Date'].iloc[-1]]
-    predicted_date = 35 - len(df_encoded['Date'])
-    count_day = 0
-    print(df[-5:])
-    # 滑動窗口預測未來的重量，直到達到2100或30天
-    for day in range(predicted_date):  # 預測30天
-        predicted_weight_scaled = model.predict(current_input)
-        # 將預測值重塑為(1, 1)的形狀
-        predicted_weight_scaled_reshaped = np.zeros((1, len(numeric_columns)))  # 確保形狀為(1, 7)
+    # 調整 LSTM 層單元數及 Dropout
+    model.add(LSTM(units=50, activation='relu',return_sequences=False, input_shape=(n_step, n_feature)))
+    model.add(Dense(units=1))
 
-        predicted_weight_scaled_reshaped[0, 0] = predicted_weight_scaled  # 將預測值放入第一個特徵
-        
-        # 使用正確的形狀進行逆變換
-        predicted_weight = scaler.inverse_transform(predicted_weight_scaled_reshaped)[0, 0]
-        predicted_weights.append(predicted_weight)
+    model.compile(optimizer='adam', loss='mse', metrics=['mse', 'mape'])
 
-        # 計算日期，從第6天開始
-        next_date = pd.to_datetime(df_encoded['Date'].iloc[-1]) + pd.Timedelta(days=day + 1)
-        predicted_dates.append(next_date.date())
+    # 加载之前保存的模型权重
+    try:
+        model.load_weights("new_model.h5")
+        print("成功加载模型权重。")
+    except:
+        print("未找到保存的权重文件，开始从头训练模型。")
 
-        # 打印預測結果
-        print(f"預測日期：{next_date.date()}, 預測重量：{predicted_weight:.2f}")
+    # 進行模型訓練
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10)
 
-        if predicted_weight > 2100:
-            print("預測重量超過 2100，停止預測。")
-            break
+    model.fit(X_train, y_train, epochs=100, batch_size=20, validation_split=0.2, callbacks=[early_stopping])
 
-
-        # 提取 current_input 中的其他特徵（第一組的其餘特徵）
-        new_data = current_input[:, :1, :]
-        new_data[:1,:1,:1]= predicted_weight_scaled
-        next_input = np.append(current_input[:, 1:, :], new_data, axis=1)
-        current_input = next_input
-        count_day+=1
-
-    plt.figure(figsize=(12, 6))
-    plt.plot(origin_df['Date'], origin_df['Weight'], label='實際重量', color='blue')
-    plt.plot(predicted_dates, predicted_weights, label='預測重量', color='red', linestyle='--')
-    plt.xlabel('日期')
-    plt.ylabel('重量')
-    plt.title('重量預測')
-    plt.legend()
-    plt.grid(True)
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
-    count += 1
+    # 保存模型
+    model.save("new_model.h5")
