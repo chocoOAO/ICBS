@@ -9,6 +9,7 @@ from tensorflow.keras.optimizers import Adam
 import re
 from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras.callbacks import EarlyStopping
+from collections import Counter
 
 # 標準參考數據
 standard_data = [43, 61, 79, 99, 122, 148, 176, 208, 242, 280, 321, 366, 414, 465, 519, 576, 637, 701, 768, 837,
@@ -37,7 +38,6 @@ try:
         cursor.execute(batch_number_list_query)
         batch_numbers = cursor.fetchall()
         batch_number_list = [batch[0] for batch in batch_numbers]
-        print(len(batch_number_list))
         for batch in batch_number_list:
             query = f"SELECT sid FROM sensorlist WHERE batchNumber = '{batch}';"
             cursor.execute(query)
@@ -94,6 +94,34 @@ finally:
 
 # 創建 DataFrame
 subset_feed_data = feed_data[:]
+print(subset_feed_data)
+
+# 統計 Feed_Type 的數量
+feed_type_counter = Counter()
+
+# 對所有批次的數據統計Feed_Type
+for per_subset_feed_data in subset_feed_data:
+    if not per_subset_feed_data:
+        continue
+    df = pd.DataFrame(per_subset_feed_data, columns=['Date','Weight','Feed_Type', 'Feed_Weight'])
+    feed_type_counter.update(df['Feed_Type'])
+
+# 定義少數類別的閾值 (例如: 少於 50)
+minority_threshold = 50
+minority_feed_types = [ft for ft, count in feed_type_counter.items() if count < minority_threshold]
+
+print('minority_feed_types:',minority_feed_types)
+# 增強函數 - 加入噪聲
+def add_noise(df, noise_level=0.1):
+    noisy_data = df.copy()
+    noisy_data['Weight'] += noise_level * np.random.randn(len(df))
+    noisy_data['Feed_Weight'] += noise_level * np.random.randn(len(df))
+    return noisy_data
+
+# 初始化增強後的數據集列表
+augmented_feed_data = []
+
+# 對於每一批數據進行處理
 for per_subset_feed_data in subset_feed_data:
     if not per_subset_feed_data:
         continue
@@ -142,59 +170,27 @@ for per_subset_feed_data in subset_feed_data:
         
         # 補充 Feed_Type 為 'No_Feed'
         df.loc[current_length:, 'Feed_Type'] = 'No_Feed'
-        # 输出结果
-    # 明確指定要進行編碼的類別
-    categories = [['No_Feed']+feed_item_list]  # 所有可能的類別
-    # 初始化編碼器，並設置 `handle_unknown='ignore'`
-    encoder = OneHotEncoder(categories=categories, handle_unknown='ignore', sparse=False)
-
-    # 進行編碼
-    encoded_features = encoder.fit_transform(df[['Feed_Type']])
-
-    # 將編碼後的特徵轉換為 DataFrame
-    encoded_df = pd.DataFrame(encoded_features, columns=encoder.get_feature_names_out(['Feed_Type']))
-
-    # 合併編碼後的特徵到原始數據集
-    df_encoded = pd.concat([df.drop(columns=['Feed_Type']), encoded_df], axis=1)
     
-    scaler = MinMaxScaler(feature_range=(0, 1))
-    data_scaled = scaler.fit_transform(df_encoded[['Weight', 'Feed_Weight', 'Feed_Type_No_Feed'] + [col for col in df_encoded.columns if 'Feed_Type_Ｎ肉雞' in col]])
+    # 初始化當前批次的增強後數據
+    current_augmented_data = df.copy()
 
-    # LSTM 模型需要 3D 輸入數據
-    X_train = []
-    y_train = []
+    # 找到少數類別的資料
+    minority_data = df[df['Feed_Type'].isin(minority_feed_types)]
 
-    # 使用過去5天數據預測未來1天
-    for i in range(5, len(data_scaled)):
-        X_train.append(data_scaled[i-5:i, :])  # 將過去5天的所有特徵添加到 X_train
-        y_train.append(data_scaled[i, 0])      # 目標是當前的 Weight
-
-    X_train, y_train = np.array(X_train), np.array(y_train)
-
-    # 調整輸入數據格式為 LSTM 所需的 3D 格式
-    X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], X_train.shape[2]))
-    n_step = X_train.shape[1]  # 這是時間步長
-    n_feature = X_train.shape[2]  # 這是特徵數
-    # 构建并优化 LSTM 模型
-    model = Sequential()
-
-    # 調整 LSTM 層單元數及 Dropout
-    model.add(LSTM(units=50, activation='relu',return_sequences=False, input_shape=(n_step, n_feature)))
-    model.add(Dense(units=1))
-
-    model.compile(optimizer='adam', loss='mse', metrics=['mse', 'mape'])
-
-    # 加载之前保存的模型权重
-    try:
-        model.load_weights("new_model.h5")
-        print("成功加载模型权重。")
-    except:
-        print("未找到保存的权重文件，开始从头训练模型。")
-
-    # 進行模型訓練
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10)
-
-    model.fit(X_train, y_train, epochs=100, batch_size=20, validation_split=0.2, callbacks=[early_stopping])
-
-    # 保存模型
-    model.save("new_model.h5")
+    if not minority_data.empty:
+        current_augmented_data = current_augmented_data[~current_augmented_data['Feed_Type'].isin(minority_feed_types)]
+    
+        # 2. 對少數類別資料進行噪聲增強
+        augmented_minority_data = add_noise(minority_data)
+        
+        # 3. 將增強後的資料添加到當前批次的數據中
+        current_augmented_data = pd.concat([current_augmented_data, augmented_minority_data], ignore_index=True)
+    
+    # 將增強後的批次數據存回列表
+    augmented_feed_data.append(current_augmented_data)
+# 將 augmented_feed_data 轉換為元組的格式
+augmented_list = []
+for afd in augmented_feed_data:
+    augmented_per_list=[]
+    for row in afd:
+         print(row)
